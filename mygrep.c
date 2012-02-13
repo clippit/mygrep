@@ -20,16 +20,17 @@ void display_usage(int stauts, char* message)
     exit(stauts);
 }
 
-void read_pattern(char* pattern, char* source) {
-    pattern = malloc( (strlen(source) + 1) * sizeof(char) );
+char *read_pattern(const char* source) {
+    char *pattern = malloc( (strlen(source) + 1) * sizeof(char) );
     if (pattern != 0) {
         strcpy(pattern, source);
+        return pattern;
     } else {
         display_usage(EXIT_TROUBLE, "Not enough memory space");
     }
 }
 
-int do_grep(char* pattern, char* file) {
+int do_grep(const char* pattern, char* file) {
     printf("use %s to grep file %s\n", pattern, file);
     return 0;
 }
@@ -44,9 +45,7 @@ int main(int argc, char **argv) {
     while ((opt = getopt(argc, argv, optstr)) != -1) {
         switch(opt) {
         case 'e':
-            //read_pattern(pattern, optarg);
-            pattern = malloc( (strlen(optarg) + 1) * sizeof(char) );
-            strcpy(pattern, optarg);
+            pattern = read_pattern(optarg);
             break;
         case 'h':
             display_usage(EXIT_SUCCESS, NULL);
@@ -56,22 +55,15 @@ int main(int argc, char **argv) {
         }
     }
     if ( !pattern ) { // no -e option
-        //puts("'no pattern'");
         if (argc - optind < 2) {
             display_usage(EXIT_TROUBLE, "Please provide pattern and files to be greped.");
         } else {
-            //read_pattern(pattern, argv[optind++]);
-            pattern = malloc( (strlen(argv[optind]) + 1) * sizeof(char) );
-            strcpy(pattern, argv[optind]);
-            optind++;
+            pattern = read_pattern(argv[optind++]);
         }
     } else if (argc - optind < 1) {
         display_usage(EXIT_TROUBLE, "Please provide files to be greped.");
     }
 
-    //free(pattern);
-    //pattern = malloc(4);
-    //strcpy(pattern, "qqq");
     while (optind < argc) {
         char *file = argv[optind++];
         status = do_grep(pattern, file);
