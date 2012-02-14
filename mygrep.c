@@ -11,6 +11,10 @@
 #endif
 #define MAXLINE 1000
 
+struct global_args_t {
+    int is_invert; // for option -v
+} gargs;
+
 void display_usage(int status, char* message, int errcode)
 {
     if (message != NULL || errcode != 0) 
@@ -21,8 +25,9 @@ void display_usage(int status, char* message, int errcode)
     puts("Options:");
     puts("-h            Show this help");
     puts("-e PATTERN    Use PATTERN as the pattern. This can be used to protect a pattern");
-    puts("              beginning with a hyphen (-).  (-e is specified by POSIX.)" );
+    puts("              beginning with a hyphen (-)." );
     puts("-i            Ignore case distinctions.");
+    puts("-v            Select non-matching lines.");
     exit(status);
 }
 
@@ -54,11 +59,14 @@ int do_grep(regex_t* preg, char* filename) {
             linebuf[len] = 0; //replace newline with null
         regexec_code = regexec(preg, linebuf, 0, NULL, 0);
         switch(regexec_code) {
-        case 0:
-            puts(linebuf); // success
+        case 0: // success
+            if (!gargs.is_invert)
+                puts(linebuf); 
             break;
-        case REG_NOMATCH:
-            break; //fail
+        case REG_NOMATCH: //fail
+            if (gargs.is_invert)
+                puts(linebuf);
+            break; 
         default:
             regfree(preg);
             display_usage(EXIT_TROUBLE, "Match Error.", regexec_code);
@@ -77,8 +85,9 @@ int main(int argc, char **argv) {
     regex_t *preg     = malloc(sizeof(regex_t));
     int regcomp_flags = REG_BASIC;
     int regex_errcode = 0;
+    gargs.is_invert   = 0;
 
-    static const char *optstr = "e:hi";
+    static const char *optstr = "e:hiv";
     int opt = 0;
     while ((opt = getopt(argc, argv, optstr)) != -1) {
         switch(opt) {
@@ -90,6 +99,9 @@ int main(int argc, char **argv) {
             break;
         case 'i':
             regcomp_flags |= REG_ICASE;
+            break;
+        case 'v':
+            gargs.is_invert = 1;
             break;
         default: // shouldn't reach here
             break;
