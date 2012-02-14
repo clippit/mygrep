@@ -14,7 +14,7 @@
 struct global_args_t {
     int is_invert;        // for option -v
     int show_line_number; // for option -n
-    int multi_file;       // flag for multi file
+    int show_filename;    // flag for multi file of -H option
 } gargs;
 
 void display_usage(int status, char* message, int errcode)
@@ -50,9 +50,17 @@ int do_grep(regex_t* preg, char* filename) {
     printf("----preg %d to grep file %s\n", (int)preg, filename);
     #endif
 
-    FILE *file = fopen(filename, "r");
-    if (file == NULL)
-        display_usage(EXIT_TROUBLE, "Open file failed.", errno);
+    char *label = NULL;
+    FILE *file  = NULL;
+    if (strcmp(filename, "-") == 0) {
+        label = "(standard input)";
+        file = stdin;
+    } else {
+        label = filename;
+        file = fopen(filename, "r");
+        if (file == NULL)
+            display_usage(EXIT_TROUBLE, "Open file failed.", errno);
+    }
     
     char linebuf[MAXLINE];
     int regexec_code = 0;
@@ -73,11 +81,11 @@ int do_grep(regex_t* preg, char* filename) {
            || (regexec_code == 1 && gargs.is_invert == 1)
         */
         if ( !(regexec_code ^ gargs.is_invert) ) {
-            if (gargs.multi_file && gargs.show_line_number)
-                printf("%s:%d:%s\n", filename, line_number, linebuf);
-            else if (gargs.multi_file && !gargs.show_line_number)
-                printf("%s:%s\n", filename, linebuf);
-            else if (!gargs.multi_file && gargs.show_line_number)
+            if (gargs.show_filename && gargs.show_line_number)
+                printf("%s:%d:%s\n", label, line_number, linebuf);
+            else if (gargs.show_filename && !gargs.show_line_number)
+                printf("%s:%s\n", label, linebuf);
+            else if (!gargs.show_filename && gargs.show_line_number)
                 printf("%d:%s\n", line_number, linebuf);
             else
                 puts(linebuf);
@@ -95,15 +103,18 @@ int main(int argc, char **argv) {
     int regcomp_flags      = REG_BASIC;
     int regex_errcode      = 0;
     gargs.is_invert        = 0;
-    gargs.multi_file       = 0;
+    gargs.show_filename    = 0;
     gargs.show_line_number = 0;
 
-    static const char *optstr = "e:hinv";
+    static const char *optstr = "e:Hhinv";
     int opt = 0;
     while ((opt = getopt(argc, argv, optstr)) != -1) {
         switch(opt) {
         case 'e':
             pattern = read_pattern(optarg);
+            break;
+        case 'H':
+            gargs.show_filename = 1;
             break;
         case 'h':
             display_usage(EXIT_SUCCESS, NULL, EXIT_SUCCESS);
@@ -122,13 +133,11 @@ int main(int argc, char **argv) {
         }
     }
     if ( !pattern ) { // no -e option
-        if (argc - optind < 2) {
-            display_usage(EXIT_TROUBLE, "Please provide pattern and files to be greped.", -1);
+        if (argc - optind < 1) {
+            display_usage(EXIT_TROUBLE, "Please provide pattern.", -1);
         } else {
             pattern = read_pattern(argv[optind++]);
         }
-    } else if (argc - optind < 1) {
-        display_usage(EXIT_TROUBLE, "Please provide files to be greped.", -1);
     }
 
     if ( (regex_errcode = regcomp(preg, pattern, regcomp_flags)) != 0 ) {
@@ -142,8 +151,14 @@ int main(int argc, char **argv) {
     printf("optind:%d, argc:%d\n\n", optind, argc);
     #endif
 
+    if (argc == optind) { // use stdin
+        status = do_grep(preg, "-");
+        regfree(preg);
+        exit(status);
+    }
+
     if (argc - optind > 1)
-        gargs.multi_file = 1;
+        gargs.show_filename = 1;
 
     while (optind < argc) {
         char *filename = argv[optind++];
