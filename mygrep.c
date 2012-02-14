@@ -46,18 +46,34 @@ int do_grep(regex_t* preg, char* filename) {
     if (file == NULL)
         display_usage(EXIT_TROUBLE, "Open file failed.", errno);
     
-    char line[MAXLINE];
-    while( fgets(line, MAXLINE, file) != NULL ) {
-        puts(line);
+    char linebuf[MAXLINE];
+    int regexec_code = 0;
+    while ( fgets(linebuf, MAXLINE, file) != NULL ) {
+        int len = strlen(linebuf) - 1;
+        if ( linebuf[len] == '\n' )
+            linebuf[len] = 0; //replace newline with null
+        regexec_code = regexec(preg, linebuf, 0, NULL, 0);
+        switch(regexec_code) {
+        case 0:
+            puts(linebuf); // success
+            break;
+        case REG_NOMATCH:
+            break; //fail
+        default:
+            regfree(preg);
+            display_usage(EXIT_TROUBLE, "Match Error.", regexec_code);
+            break;
+        }
+            
     }
 
     fclose(file);
-    return 0;
+    return regexec_code;
 }
 
 int main(int argc, char **argv) {
     char *pattern     = NULL;
-    int status        = EXIT_SUCCESS;
+    int status        = 0;
     regex_t *preg     = malloc(sizeof(regex_t));
     int regcomp_flags = REG_BASIC;
     int regex_errcode = 0;
