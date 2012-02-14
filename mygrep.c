@@ -1,17 +1,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <errno.h>
 #include <string.h>
 #include <regex.h>
+#include "isdir.h"
 
-#if !defined(EXIT_TROUBLE)
+#ifndef EXIT_TROUBLE
 # define EXIT_TROUBLE 2
 #endif
+#define MAXLINE 1000
 
 void display_usage(int stauts, char* message, int errcode)
 {
     if (message != NULL || errcode != 0) 
-        printf("ERROR: %s\nError Code: %d\n----------------------------------------\n", message, errcode);
         fprintf(stderr, "ERROR: %s\nError Code: %d\n----------------------------------------\n", message, errcode);
     puts("A tiny grep impletment as the homework of Linux Programming");
     puts("Usage: mygrep [OPTION]... PATTERN [FILE]...");
@@ -35,17 +37,30 @@ char *read_pattern(const char* source) {
     return NULL; // won't be here
 }
 
-int do_grep(regex_t* preg, char* file) {
-    //printf("use %d to grep file %s\n", preg->re_nsub, file);
+int do_grep(regex_t* preg, char* filename) {
+    #ifdef DEBUG
+    printf("----preg re_nsub %d to grep file %s\n", (int)preg, filename);
+    #endif
+
+    FILE *file = fopen(filename, "r");
+    if (file == NULL)
+        display_usage(EXIT_TROUBLE, "Open file failed.", errno);
+    
+    char line[MAXLINE];
+    while( fgets(line, MAXLINE, file) != NULL ) {
+        puts(line);
+    }
+
+    fclose(file);
     return 0;
 }
 
 int main(int argc, char **argv) {
     char *pattern     = NULL;
-    char *file        = NULL;
     int status        = EXIT_SUCCESS;
+    regex_t *preg     = malloc(sizeof(regex_t));
     int regcomp_flags = REG_BASIC;
-    regex_t preg;
+    int regex_errcode = 0;
 
     static const char *optstr = "e:hi";
     int opt = 0;
@@ -74,17 +89,18 @@ int main(int argc, char **argv) {
         display_usage(EXIT_TROUBLE, "Please provide files to be greped.", -1);
     }
 
-    int regcomp_errcode;
-    if ( (regcomp_errcode = regcomp(&preg, pattern, regcomp_flags)) != 0 ) {
-        regfree(&preg);
-        display_usage(EXIT_TROUBLE, "Pattern invalid.", regcomp_errcode);
+    if ( (regex_errcode = regcomp(preg, pattern, regcomp_flags)) != 0 ) {
+        regfree(preg);
+        display_usage(EXIT_TROUBLE, "Pattern invalid.", regex_errcode);
     }
         
     free(pattern);
 
     while (optind < argc) {
-        char *file = argv[optind++];
-        status = do_grep(&preg, file);
+        char *filename = argv[optind++];
+        if (isdir(filename))
+            display_usage(EXIT_TROUBLE, "Please provide a file instead of directory", -1);
+        status = do_grep(preg, filename);
     }
 
     exit(status);
