@@ -1,13 +1,17 @@
 CC=gcc
-CFLAGS=-g -DDEBUG -Wall
+CFLAGS=-g -DDEBUG -Wall -Ilib
+OBJS=isdir.o mygrep.o
 
-.PHONY : all mygrep.o clean
+.PHONY : all clean $(OBJS)
 
-all: mygrep.o
-	$(CC) -o mygrep mygrep.o
+all: $(OBJS)
+	$(CC) -o mygrep $(OBJS)
 
 mygrep.o: mygrep.c
 	$(CC) -c $(CFLAGS) mygrep.c
 
+isdir.o: lib/isdir.h lib/isdir.c
+	$(CC) -c $(CFLAGS) lib/isdir.c
+
 clean:
-	rm -f mygrep.o mygrep
+	rm -f $(OBJS) mygrep
