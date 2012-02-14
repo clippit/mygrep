@@ -12,8 +12,9 @@
 #define MAXLINE 1000
 
 struct global_args_t {
-    int is_invert;  // for option -v
-    int multi_file; // flag for multi file
+    int is_invert;        // for option -v
+    int show_line_number; // for option -n
+    int multi_file;       // flag for multi file
 } gargs;
 
 void display_usage(int status, char* message, int errcode)
@@ -28,6 +29,7 @@ void display_usage(int status, char* message, int errcode)
     puts("-e PATTERN    Use PATTERN as the pattern. This can be used to protect a");
     puts("              pattern beginning with a hyphen (-)." );
     puts("-i            Ignore case distinctions.");
+    puts("-n            Print line number with output lines.");
     puts("-v            Select non-matching lines.");
     exit(status);
 }
@@ -54,7 +56,9 @@ int do_grep(regex_t* preg, char* filename) {
     
     char linebuf[MAXLINE];
     int regexec_code = 0;
+    int line_number = 0;
     while ( fgets(linebuf, MAXLINE, file) != NULL ) {
+        line_number++;
         int len = strlen(linebuf) - 1;
         if ( linebuf[len] == '\n' )
             linebuf[len] = 0; //replace newline with null
@@ -63,14 +67,18 @@ int do_grep(regex_t* preg, char* filename) {
             regfree(preg);
             display_usage(EXIT_TROUBLE, "Match Error.", regexec_code);
         }
-        
-        /* this condition equals to: 
+
+        /* this condition equals to:
            (regexec_code == 0 && gargs.is_invert == 0) 
            || (regexec_code == 1 && gargs.is_invert == 1)
         */
         if ( !(regexec_code ^ gargs.is_invert) ) {
-            if (gargs.multi_file)
-                printf("(%s):%s\n", filename, linebuf);
+            if (gargs.multi_file && gargs.show_line_number)
+                printf("%s:%d:%s\n", filename, line_number, linebuf);
+            else if (gargs.multi_file && !gargs.show_line_number)
+                printf("%s:%s\n", filename, linebuf);
+            else if (!gargs.multi_file && gargs.show_line_number)
+                printf("%d:%s\n", line_number, linebuf);
             else
                 puts(linebuf);
         }
@@ -81,15 +89,16 @@ int do_grep(regex_t* preg, char* filename) {
 }
 
 int main(int argc, char **argv) {
-    char *pattern     = NULL;
-    int status        = 0;
-    regex_t *preg     = malloc(sizeof(regex_t));
-    int regcomp_flags = REG_BASIC;
-    int regex_errcode = 0;
-    gargs.is_invert   = 0;
-    gargs.multi_file  = 0;
+    char *pattern          = NULL;
+    int status             = 0;
+    regex_t *preg          = malloc(sizeof(regex_t));
+    int regcomp_flags      = REG_BASIC;
+    int regex_errcode      = 0;
+    gargs.is_invert        = 0;
+    gargs.multi_file       = 0;
+    gargs.show_line_number = 0;
 
-    static const char *optstr = "e:hiv";
+    static const char *optstr = "e:hinv";
     int opt = 0;
     while ((opt = getopt(argc, argv, optstr)) != -1) {
         switch(opt) {
@@ -101,6 +110,9 @@ int main(int argc, char **argv) {
             break;
         case 'i':
             regcomp_flags |= REG_ICASE;
+            break;
+        case 'n':
+            gargs.show_line_number = 1;
             break;
         case 'v':
             gargs.is_invert = 1;
