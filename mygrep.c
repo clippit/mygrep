@@ -12,14 +12,14 @@ void display_usage(int stauts, char* message, int errcode)
 {
     if (message != NULL || errcode != 0) 
         printf("ERROR: %s\nError Code: %d\n----------------------------------------\n", message, errcode);
+        fprintf(stderr, "ERROR: %s\nError Code: %d\n----------------------------------------\n", message, errcode);
     puts("A tiny grep impletment as the homework of Linux Programming");
     puts("Usage: mygrep [OPTION]... PATTERN [FILE]...");
     puts("Search for PATTERN in each FILE or standard input.");
     puts("Options:");
     puts("-h            Show this help");
-    puts("-e PATTERN    Use PATTERN as the pattern. This can be used to specify multiple");
-    puts("              search patterns, or to protect a pattern beginning with");
-    puts("              a hyphen (-).  (-e is specified by POSIX.)" );
+    puts("-e PATTERN    Use PATTERN as the pattern. This can be used to protect a pattern");
+    puts("              beginning with a hyphen (-).  (-e is specified by POSIX.)" );
     puts("-i            Ignore case distinctions.");
     exit(stauts);
 }
@@ -32,6 +32,7 @@ char *read_pattern(const char* source) {
     } else {
         display_usage(EXIT_TROUBLE, "Not enough memory space", -1);
     }
+    return NULL; // won't be here
 }
 
 int do_grep(regex_t* preg, char* file) {
