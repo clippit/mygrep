@@ -26,8 +26,10 @@ void display_usage(int status, char* message, int errcode)
     puts("Search for PATTERN in each FILE or standard input.");
     puts("Options:");
     puts("-h            Show this help");
+    puts("-E            Interpret PATTERN as an extended regular expression.");
     puts("-e PATTERN    Use PATTERN as the pattern. This can be used to protect a");
     puts("              pattern beginning with a hyphen (-)." );
+    puts("-H            Print the filename for each match.");
     puts("-i            Ignore case distinctions.");
     puts("-n            Print line number with output lines.");
     puts("-v            Select non-matching lines.");
@@ -106,12 +108,15 @@ int main(int argc, char **argv) {
     gargs.show_filename    = 0;
     gargs.show_line_number = 0;
 
-    static const char *optstr = "e:Hhinv";
+    static const char *optstr = "Ee:Hhinv";
     int opt = 0;
     while ((opt = getopt(argc, argv, optstr)) != -1) {
         switch(opt) {
         case 'e':
             pattern = read_pattern(optarg);
+            break;
+        case 'E':
+            regcomp_flags |= REG_EXTENDED;
             break;
         case 'H':
             gargs.show_filename = 1;
