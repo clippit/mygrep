@@ -59,19 +59,20 @@ int do_grep(regex_t* preg, char* filename) {
         if ( linebuf[len] == '\n' )
             linebuf[len] = 0; //replace newline with null
         regexec_code = regexec(preg, linebuf, 0, NULL, 0);
-        switch(regexec_code) {
-        case 0: // success
-            if (!gargs.is_invert)
-                puts(linebuf); 
-            break;
-        case REG_NOMATCH: //fail
-            if (gargs.is_invert)
-                puts(linebuf);
-            break; 
-        default:
+        if (regexec_code > REG_NOMATCH) { // >1?
             regfree(preg);
             display_usage(EXIT_TROUBLE, "Match Error.", regexec_code);
-            break;
+        }
+        
+        /* this condition equals to: 
+           (regexec_code == 0 && gargs.is_invert == 0) 
+           || (regexec_code == 1 && gargs.is_invert == 1)
+        */
+        if ( !(regexec_code ^ gargs.is_invert) ) {
+            if (gargs.multi_file)
+                printf("(%s):%s\n", filename, linebuf);
+            else
+                puts(linebuf);
         }
     }
 
