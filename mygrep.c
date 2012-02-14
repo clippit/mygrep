@@ -12,7 +12,8 @@
 #define MAXLINE 1000
 
 struct global_args_t {
-    int is_invert; // for option -v
+    int is_invert;  // for option -v
+    int multi_file; // flag for multi file
 } gargs;
 
 void display_usage(int status, char* message, int errcode)
@@ -24,8 +25,8 @@ void display_usage(int status, char* message, int errcode)
     puts("Search for PATTERN in each FILE or standard input.");
     puts("Options:");
     puts("-h            Show this help");
-    puts("-e PATTERN    Use PATTERN as the pattern. This can be used to protect a pattern");
-    puts("              beginning with a hyphen (-)." );
+    puts("-e PATTERN    Use PATTERN as the pattern. This can be used to protect a");
+    puts("              pattern beginning with a hyphen (-)." );
     puts("-i            Ignore case distinctions.");
     puts("-v            Select non-matching lines.");
     exit(status);
@@ -44,7 +45,7 @@ char *read_pattern(const char* source) {
 
 int do_grep(regex_t* preg, char* filename) {
     #ifdef DEBUG
-    printf("----preg re_nsub %d to grep file %s\n", (int)preg, filename);
+    printf("----preg %d to grep file %s\n", (int)preg, filename);
     #endif
 
     FILE *file = fopen(filename, "r");
@@ -72,7 +73,6 @@ int do_grep(regex_t* preg, char* filename) {
             display_usage(EXIT_TROUBLE, "Match Error.", regexec_code);
             break;
         }
-            
     }
 
     fclose(file);
@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
     int regcomp_flags = REG_BASIC;
     int regex_errcode = 0;
     gargs.is_invert   = 0;
+    gargs.multi_file  = 0;
 
     static const char *optstr = "e:hiv";
     int opt = 0;
@@ -124,6 +125,13 @@ int main(int argc, char **argv) {
         
     free(pattern);
 
+    #ifdef DEBUG
+    printf("optind:%d, argc:%d\n\n", optind, argc);
+    #endif
+
+    if (argc - optind > 1)
+        gargs.multi_file = 1;
+
     while (optind < argc) {
         char *filename = argv[optind++];
         if (isdir(filename))
@@ -131,5 +139,6 @@ int main(int argc, char **argv) {
         status = do_grep(preg, filename);
     }
 
+    regfree(preg);
     exit(status);
 }
