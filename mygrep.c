@@ -11,7 +11,7 @@
 #endif
 #define MAXLINE 1000
 
-void display_usage(int stauts, char* message, int errcode)
+void display_usage(int status, char* message, int errcode)
 {
     if (message != NULL || errcode != 0) 
         fprintf(stderr, "ERROR: %s\nError Code: %d\n----------------------------------------\n", message, errcode);
@@ -23,7 +23,7 @@ void display_usage(int stauts, char* message, int errcode)
     puts("-e PATTERN    Use PATTERN as the pattern. This can be used to protect a pattern");
     puts("              beginning with a hyphen (-).  (-e is specified by POSIX.)" );
     puts("-i            Ignore case distinctions.");
-    exit(stauts);
+    exit(status);
 }
 
 char *read_pattern(const char* source) {
