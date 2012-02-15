@@ -81,5 +81,14 @@
 
 不支持目录下递归遍历所有子目录文件的grep操作，遇到目标文件是个目录时，会输出 _is a directory_ 的警告。
 
+## GNU grep
+GNU grep 可以在 [GNU 项目网站][grep download]上下载到。GNU grep 对多平台和 i18n 都做了很多处理，支持颜色输出。同时其搜索性能也非常出色，据说明文件介绍 grep 扩展了 GNU C library 的正则表达式库，使用了 [Boyer-Moore 字符串搜索算法][Boyer–Moore]，效率很高，此外还支持多关键字搜索。而且 grep 读取文件是直接做系统调用，自己维护缓存，这也进一步提高了它的性能。以上提到的都是在本 mygrep 中没有实现的。
+
+grep 的主源码文件 `main.c` 有2000多行，从 `main` 函数开始读取输入参数，然后根据参数针对文件和目录使用 `grepfile` 和 `grepdir` 操作，并调用核心函数 `grep`。
+
 * * *
 张乐添（091250215）
+
+
+[grep download]: http://ftp.gnu.org/gnu/grep/grep-2.10.tar.xz
+[Boyer–Moore]: http://en.wikipedia.org/wiki/Boyer%E2%80%93Moore_string_search_algorithm
