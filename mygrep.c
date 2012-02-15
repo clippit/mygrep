@@ -22,6 +22,7 @@ void display_usage(int status, char* message, int errcode)
     if (message != NULL || errcode != 0) 
         fprintf(stderr, "ERROR: %s\nError Code: %d\n----------------------------------------\n", message, errcode);
     puts("A tiny grep impletment as the homework of Linux Programming");
+    puts("# Developed By Letian Zhang (Student ID: 091250215) #");
     puts("Usage: mygrep [OPTION]... PATTERN [FILE]...");
     puts("Search for PATTERN in each FILE or standard input.");
     puts("Options:");
