@@ -168,7 +168,8 @@ int main(int argc, char **argv) {
     while (optind < argc) {
         char *filename = argv[optind++];
         if (isdir(filename))
-            display_usage(EXIT_TROUBLE, "Please provide a file instead of directory", -1);
+            fprintf(stderr, "[WARNING] %s is a directory.\n", filename);
+            //display_usage(EXIT_TROUBLE, "Please provide a file instead of directory", -1);
         status = do_grep(preg, filename);
     }
 
